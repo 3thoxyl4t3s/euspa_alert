@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 
 URL_CIBLE = "https://www.euspa-careerday.eu/coming-soon"
 
-# Choisi un identifiant unique pour ton canal d'alerte (ex: euspa-alert-tonprenom)
+# Nom de ton canal d'alerte sur l'app ntfy
 NTFY_TOPIC = "euspa-careerday-rdv-alert"
 
 HEADERS = {
@@ -17,17 +17,10 @@ HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
 
-if __name__ == "__main__":
-    # --- Ligne temporaire de test (à supprimer après vérification) ---
-    notify_user("🧪 Test GitHub Actions", "Le script tourne correctement sur GitHub !", URL_CIBLE)
-    # -----------------------------------------------------------------
-    
-    verify_page()
-
 def notify_user(title: str, message: str, click_url: str):
     """Envoie un push instantané sur smartphone via ntfy.sh."""
     try:
-        requests.post(
+        response = requests.post(
             f"https://ntfy.sh/{NTFY_TOPIC}",
             data=message.encode("utf-8"),
             headers={
@@ -38,18 +31,19 @@ def notify_user(title: str, message: str, click_url: str):
             },
             timeout=10
         )
-        print(f"[+] Notification envoyée : {title}")
+        print(f"[+] Notification envoyée (status: {response.status_code}) : {title}")
     except Exception as err:
         print(f"[-] Erreur d'envoi ntfy: {err}")
 
 def verify_page():
+    """Vérifie l'état de la page EUSPA."""
     try:
         response = requests.get(URL_CIBLE, headers=HEADERS, timeout=15, allow_redirects=True)
     except requests.RequestException as e:
         print(f"[!] Erreur réseau lors de la requête : {e}")
         return
 
-    # 1. Vérification de redirection ou suppression de la page
+    # 1. Vérification d'une redirection éventuelle vers une nouvelle page de réservation
     final_url = response.url.rstrip("/")
     if final_url != URL_CIBLE.rstrip("/"):
         notify_user(
@@ -69,19 +63,18 @@ def verify_page():
 
     soup = BeautifulSoup(response.text, "html.parser")
 
-    # 2. Vérification du titre H1
+    # 2. Vérification du titre principal
     h1_tag = soup.find("h1")
     h1_text = h1_tag.get_text(strip=True).lower() if h1_tag else ""
 
-    # 3. Vérification du corps de l'article principal
+    # 3. Vérification du corps de l'article
     article_tag = soup.find("article")
     article_text = article_tag.get_text(separator=" ", strip=True).lower() if article_tag else ""
 
-    # Critères de blocage actuels (état fermé)
+    # Indicateurs de l'état "fermé" actuel
     is_still_coming_soon = "coming soon" in h1_text
     has_waiting_text = "will open at a later date" in article_text or "stay tuned" in article_text
 
-    # Détection de changement
     if not is_still_coming_soon:
         notify_user(
             "🚨 EUSPA : Le titre 'Coming Soon' a disparu !",
@@ -95,9 +88,8 @@ def verify_page():
             URL_CIBLE
         )
     else:
-        # Vérification si un nouveau bouton/lien a été ajouté dans le corps de l'article
+        # Vérification d'un lien sortant vers un module de prise de RDV externe
         links = article_tag.find_all("a") if article_tag else []
-        # Actuellement, il n'y a que le lien "Return to homepage"
         outbound_links = [
             a["href"] for a in links 
             if a.get("href") and "euspa-careerday.eu" not in a.get("href")
@@ -112,4 +104,8 @@ def verify_page():
             print(f"[{time.strftime('%H:%M:%S')}] RAS : Les réservations ne sont pas encore ouvertes.")
 
 if __name__ == "__main__":
+    # --- TEST TEMPORAIRE : envoie une notification pour valider GitHub Actions ---
+    notify_user("🧪 Test GitHub Actions", "Le script tourne parfaitement sur GitHub !", URL_CIBLE)
+    # ----------------------------------------------------------------------------
+    
     verify_page()
