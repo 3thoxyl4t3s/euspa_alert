@@ -17,6 +17,13 @@ HEADERS = {
     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 }
 
+if __name__ == "__main__":
+    # --- Ligne temporaire de test (à supprimer après vérification) ---
+    notify_user("🧪 Test GitHub Actions", "Le script tourne correctement sur GitHub !", URL_CIBLE)
+    # -----------------------------------------------------------------
+    
+    verify_page()
+
 def notify_user(title: str, message: str, click_url: str):
     """Envoie un push instantané sur smartphone via ntfy.sh."""
     try:
