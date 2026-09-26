@@ -104,9 +104,3 @@ def verify_page():
             )
         else:
             print(f"[{time.strftime('%H:%M:%S')}] RAS : Les réservations ne sont pas encore ouvertes.")
-
-if __name__ == "__main__":
-    # Test temporaire pour vérifier la réception push
-    notify_user("🧪 Test GitHub Actions", "Le script tourne parfaitement sur GitHub !", URL_CIBLE)
-    
-    verify_page()
