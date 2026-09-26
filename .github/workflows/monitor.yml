@@ -1,0 +1,24 @@
+name: Monitor EUSPA Bookings
+
+on:
+  schedule:
+    # Exécution toutes les 10 minutes
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4
+        
+      - name: Check EUSPA status
+        run: python euspa_alert.py
