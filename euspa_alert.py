@@ -18,20 +18,22 @@ HEADERS = {
 }
 
 def notify_user(title: str, message: str, click_url: str):
-    """Envoie un push instantané sur smartphone via ntfy.sh."""
+    """Envoie un push instantané sur smartphone via l'API JSON de ntfy.sh."""
     try:
+        payload = {
+            "topic": NTFY_TOPIC,
+            "title": title,
+            "message": message,
+            "priority": 5,  # Priorité max / urgente
+            "tags": ["rotating_light", "rocket"],
+            "click": click_url
+        }
         response = requests.post(
-            f"https://ntfy.sh/{NTFY_TOPIC}",
-            data=message.encode("utf-8"),
-            headers={
-                "Title": title,
-                "Priority": "urgent",
-                "Tags": "rotating_light,rocket",
-                "Click": click_url
-            },
+            "https://ntfy.sh",
+            json=payload,
             timeout=10
         )
-        print(f"[+] Notification envoyée (status: {response.status_code}) : {title}")
+        print(f"[+] Notification envoyée (HTTP {response.status_code}) : {title}")
     except Exception as err:
         print(f"[-] Erreur d'envoi ntfy: {err}")
 
@@ -43,7 +45,7 @@ def verify_page():
         print(f"[!] Erreur réseau lors de la requête : {e}")
         return
 
-    # 1. Vérification d'une redirection éventuelle vers une nouvelle page de réservation
+    # 1. Vérification d'une redirection vers une nouvelle page de réservation
     final_url = response.url.rstrip("/")
     if final_url != URL_CIBLE.rstrip("/"):
         notify_user(
@@ -104,8 +106,7 @@ def verify_page():
             print(f"[{time.strftime('%H:%M:%S')}] RAS : Les réservations ne sont pas encore ouvertes.")
 
 if __name__ == "__main__":
-    # --- TEST TEMPORAIRE : envoie une notification pour valider GitHub Actions ---
+    # Test temporaire pour vérifier la réception push
     notify_user("🧪 Test GitHub Actions", "Le script tourne parfaitement sur GitHub !", URL_CIBLE)
-    # ----------------------------------------------------------------------------
     
     verify_page()
